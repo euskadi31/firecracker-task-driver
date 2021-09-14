@@ -56,7 +56,6 @@ func RandomVethName() (string, error) {
 	return fmt.Sprintf("veth%x", entropy), nil
 }
 
-
 type options struct {
 	FcBinary           string   `long:"firecracker-binary" description:"Path to firecracker binary"`
 	FcKernelImage      string   `long:"kernel" description:"Path to the kernel image" default:"./vmlinux"`
@@ -144,7 +143,6 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 			HtEnabled:   firecracker.Bool(htEnabled),
 			MemSizeMib:  firecracker.Int64(opts.FcMemSz),
 		},
-		Debug: opts.Debug,
 	}, nil
 }
 
@@ -164,7 +162,7 @@ func (opts *options) getNetwork(AllocId string) ([]firecracker.NetworkInterface,
 		nic := firecracker.NetworkInterface{
 			CNIConfiguration: &firecracker.CNIConfiguration{
 				NetworkName: opts.FcNetworkName,
-				IfName:  veth,
+				IfName:      veth,
 			},
 		}
 		NICs = append(NICs, nic)
