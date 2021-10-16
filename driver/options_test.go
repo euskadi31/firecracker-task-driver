@@ -27,7 +27,8 @@ var (
 )
 
 func TestGetSocketPath(t *testing.T) {
-	assert.True(t, socketPathPattern.MatchString(getSocketPath()))
+	path := getSocketPath()
+	assert.True(t, socketPathPattern.MatchString(path), path)
 }
 
 func TestGenmacaddr(t *testing.T) {
