@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	socketPathPattern = regexp.MustCompile(`/root/.firecracker.sock-\d+-\d+`)
+	socketPathPattern = regexp.MustCompile(`^([a-zA-Z0-9\/]+)/.firecracker.sock-\d+-\d+`)
 	macAddressPattern = regexp.MustCompile(`^([0-9A-F]{2}:){5}[0-9A-F]{2}$`)
 	vethPattern       = regexp.MustCompile(`veth([a-f0-9]+)`)
 )
