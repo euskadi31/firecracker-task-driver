@@ -37,12 +37,14 @@ func newOptions() *options {
 
 func genmacaddr() (string, error) {
 	buf := make([]byte, 6)
-	_, err := rand.Read(buf)
-	if err != nil {
-		return "", fmt.Errorf("Fail to generate mac address: %v", err)
+
+	if _, err := rand.Read(buf); err != nil {
+		return "", fmt.Errorf("Fail to generate mac address: %w", err)
 	}
+
 	buf[0] |= 2
-	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
+
+	return strings.ToUpper(fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])), nil
 }
 
 func RandomVethName() (string, error) {
@@ -371,6 +373,7 @@ func getSocketPath() string {
 		strconv.Itoa(rand.Intn(1000))},
 		"-",
 	)
+
 	var dir string
 	if d := os.Getenv("HOME"); checkExistsAndDir(d) {
 		dir = d
@@ -389,10 +392,12 @@ func checkExistsAndDir(path string) bool {
 	if path == "" {
 		return false
 	}
+
 	// does it exist?
 	if info, err := os.Stat(path); err == nil {
 		// is it a directory?
 		return info.IsDir()
 	}
+
 	return false
 }

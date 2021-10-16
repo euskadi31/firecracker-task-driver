@@ -16,3 +16,7 @@ plugin
 client
 plugin
 firecracker-task-driver
+
+.build/
+
+*_stamp

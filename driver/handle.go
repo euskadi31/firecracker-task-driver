@@ -76,14 +76,17 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 func (h *taskHandle) IsRunning() bool {
 	h.stateLock.RLock()
 	defer h.stateLock.RUnlock()
+
 	return h.State == drivers.TaskStateRunning
 }
 
 func (h *taskHandle) run() {
 	h.stateLock.Lock()
+
 	if h.exitResult == nil {
 		h.exitResult = &drivers.ExitResult{}
 	}
+
 	/* TODO:
 	 *  To really check the status by querying the firecracker's API, you need to call DescribeInstance
 	 *  which is not implemented in firecracker-go-sdk
@@ -100,6 +103,7 @@ func (h *taskHandle) run() {
 		h.exitResult.Signal = 0
 		h.completedAt = time.Now()
 		h.stateLock.Unlock()
+
 		return
 	}
 
@@ -115,6 +119,7 @@ func (h *taskHandle) run() {
 			break
 		}
 	}
+
 	h.stateLock.Lock()
 	defer h.stateLock.Unlock()
 
@@ -126,8 +131,11 @@ func (h *taskHandle) run() {
 
 func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
 	defer close(statsChannel)
+
 	timer := time.NewTimer(0)
+
 	h.logger.Debug("Starting stats collection for ", h.taskConfig.ID)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -151,6 +159,7 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 			h.logger.Error("unable create new process ", h.Info.Pid, " from ", h.taskConfig.ID)
 			continue
 		}
+
 		ms := &drivers.MemoryStats{}
 		if memInfo, err := p.MemoryInfo(); err == nil {
 			ms.RSS = memInfo.RSS
@@ -187,17 +196,20 @@ func keysToVal(line string) (string, uint64, error) {
 	if len(tokens) != 2 {
 		return "", 0, fmt.Errorf("line isn't a k/v pair")
 	}
+
 	key := tokens[0]
+
 	val, err := strconv.ParseUint(tokens[1], 10, 64)
+
 	return key, val, err
 }
 
 func (h *taskHandle) Signal(sig string) error {
-
 	pid, errpid := strconv.Atoi(h.Info.Pid)
 	if errpid != nil {
 		return fmt.Errorf("ERROR Firecracker-task-driver Could not parse pid=%s", h.Info.Pid)
 	}
+
 	p, err := os.FindProcess(pid)
 	if err != nil {
 		return fmt.Errorf("ERROR Firecracker-task-driver Could not find process to send signal")
@@ -214,18 +226,31 @@ func (h *taskHandle) Signal(sig string) error {
 	default:
 		return fmt.Errorf("Firecracker-task-driver SIGNAL NOT SUPPORTED")
 	}
+
 	return nil
 }
 
 // shutdown shuts down the container, with `timeout` grace period
 // before shutdown vm
 func (h *taskHandle) shutdown(timeout time.Duration) error {
-	vnic, _ := netlink.LinkByName(h.Info.Vnic)
-	err := netlink.LinkDel(vnic)
+	defer func(t time.Duration) {
+		time.Sleep(t)
+
+		h.MachineInstance.StopVMM()
+	}(timeout)
+
+	vnic, err := netlink.LinkByName(h.Info.Vnic)
 	if err != nil {
-			h.logger.Error("unable to remove veth ", h.Info.Vnic, " from ", h.taskConfig.ID)
+		h.logger.Error("unable to get link by name ", h.Info.Vnic, " from ", h.taskConfig.ID)
+
+		return err
 	}
-	time.Sleep(timeout)
-	h.MachineInstance.StopVMM()
+
+	if err := netlink.LinkDel(vnic); err != nil {
+		h.logger.Error("unable to remove veth ", h.Info.Vnic, " from ", h.taskConfig.ID)
+
+		return err
+	}
+
 	return nil
 }

@@ -200,6 +200,7 @@ func (d *Driver) Capabilities() (*drivers.Capabilities, error) {
 func (d *Driver) Fingerprint(ctx context.Context) (<-chan *drivers.Fingerprint, error) {
 	ch := make(chan *drivers.Fingerprint)
 	go d.handleFingerprint(ctx, ch)
+
 	return ch, nil
 }
 
